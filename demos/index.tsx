@@ -24,6 +24,7 @@ setOptions({
 });
 
 import demo_simple from "./demo-simple";
+import demo_dynamic_port from "./demo-dynamic-port";
 import demo_flow from "./demo-simple-flow";
 import demo_performance from "./demo-performance";
 import demo_locks from "./demo-locks";
@@ -34,6 +35,7 @@ import demo_zoom from "./demo-zoom-to-fit";
 import demo_labels from "./demo-labelled-links";
 
 storiesOf("Simple Usage", module)
+	.add("Demo dynamic port", demo_dynamic_port)
 	.add("Simple example", demo_simple)
 	.add("Simple flow example", demo_flow)
 	.add("Performance demo", demo_performance)

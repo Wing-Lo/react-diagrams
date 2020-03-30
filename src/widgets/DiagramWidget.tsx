@@ -16,11 +16,13 @@ import { SelectionModel } from "../models/SelectionModel";
 import { BaseModel, BaseModelListener } from "../models/BaseModel";
 import { BaseEntity } from "../BaseEntity";
 import { BaseWidget, BaseWidgetProps } from "./BaseWidget";
+import { DefaultNodeModel } from "storm-react-diagrams";
 
 export interface DiagramProps extends BaseWidgetProps {
 	diagramEngine: DiagramEngine;
 
 	allowLooseLinks?: boolean;
+	autoChangePort?:boolean;
 	allowCanvasTranslation?: boolean;
 	allowCanvasZoom?: boolean;
 	inverseZoom?: boolean;
@@ -262,6 +264,92 @@ export class DiagramWidget extends BaseWidget<DiagramProps, DiagramState> {
 						_.forEach(model.model.getPorts(), port => {
 							const portCoords = this.props.diagramEngine.getPortCoords(port);
 							port.updateCoords(portCoords);
+							let autoChangePort = this.props.autoChangePort || false;
+							if(autoChangePort){
+								// 1. iter each link
+								// 2. get link's sourceNode and targetNode
+								// 3. calculate nearest port between two node
+								// 4. create new link and added to diagramModel
+								// 5. diagramEngine.repaintCanvas();
+								// 6. old link remove;
+								// 7. calculate new point initialX and Y by old point's port's x substract new point's port's x
+								_.values(port.getLinks()).forEach((link) => {
+									var isSourcePort = false;
+									if(link.getSourcePort().getID() === port.getID()){
+										isSourcePort = true;
+									}
+									let point = link.getPointForPort(port);
+									let sourceNode = link.getSourcePort().getParent() as DefaultNodeModel;
+									let targetNode = link.getTargetPort().getParent() as DefaultNodeModel;
+									function getDistance(port1, port2) {
+										var distance = Math.pow(port1.x - port2.x, 2) + Math.pow(port1.y - port2.y, 2);
+										return Math.sqrt(distance);
+									}
+									var minDistance = getDistance(link.getSourcePort(), link.getTargetPort());
+									var minPort1 = undefined;
+									var minPort2 = undefined;
+									_.values(sourceNode.getPorts()).forEach(port1 => {
+										_.values(targetNode.getPorts()).forEach(port2 => {
+											const portCoords = this.props.diagramEngine.getPortCoords(port2);
+											port2.updateCoords(portCoords);
+											if(port1.x && port1.y && port2.x && port2.y){
+												var distance = getDistance(port1, port2);
+												if(minDistance == null || minDistance - distance > 10){
+													minDistance = distance;
+													minPort1 = port1;
+													minPort2 = port2;
+												}
+											}
+										})
+									});
+									if(minPort1 !== undefined && (minPort1.getID() !== link.getSourcePort().getID() || minPort2.getID() !== link.getTargetPort().getID())){
+										// source在target的右侧，但source的port还是out
+										let oldLinkId = link.getID();
+										let newLink = minPort1.link(minPort2);
+
+										diagramModel.addLink(newLink);
+										// 只有重新绘制才能获取到point的x和y
+										diagramEngine.repaintCanvas();
+										link.remove();
+										// diagramEngine.setDiagramModel(diagramModel);
+										let newPoint:PointModel = null;
+										let newPort:PortModel = null;
+										if(isSourcePort){
+											newPoint = newLink.getPointForPort(minPort1);
+											newPort = minPort1;
+										}else{
+											newPoint = newLink.getPointForPort(minPort2);
+											newPort = minPort2;
+										}
+
+										// let deltaX = point.x - newPoint.x;
+										let deltaX = port.x - newPort.x;
+										// let deltaY = point.y - newPoint.y;
+										let deltaY = port.y - newPort.y;
+										if(newPoint){
+											let initialX = 0;
+											let initialY = 0;
+											_.forEach(this.state.action.selectionModels, (model) => {
+												if (model.model instanceof PointModel) {
+													initialX = model.initialX - deltaX;
+													initialY = model.initialY - deltaY;
+													return
+												}
+											});
+											newPoint.selected = true;
+											this.state.action.selectionModels = _.filter(this.state.action.selectionModels, model => {
+												return !(model.model instanceof PointModel);
+											});
+											this.state.action.selectionModels.push({
+												model: newPoint,
+												initialX: initialX,
+												initialY: initialY,
+											});
+											diagramEngine.clearRepaintEntities();
+										}
+									}
+								});
+							}
 						});
 					}
 
