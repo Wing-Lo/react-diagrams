@@ -39,6 +39,33 @@ export class Toolkit {
 		return closest(element, selector);
 	}
 
+	public static getClientX(event){
+		if(event.clientX){
+			return event.clientX;
+		}else{
+			return event.touches[0].clientX;
+		}
+	}
+
+	public static getTouchMouseTargetElement(e) {
+		if (e.touches && e.touches.length > 0) {
+			return document.elementFromPoint(e.touches[0].pageX, e.touches[0].pageY);
+		}
+		if (e.changedTouches && e.changedTouches.length > 0) {
+			return document.elementFromPoint(e.changedTouches[0].pageX, e.changedTouches[0].pageY);
+		}
+
+		return e.target;
+	}
+
+	public static getClientY(event){
+		if(event.clientY){
+			return event.clientY;
+		}else{
+			return event.touches[0].clientY;
+		}
+	}
+
 	public static generateLinePath(firstPoint: PointModel, lastPoint: PointModel): string {
 		return `M${firstPoint.x},${firstPoint.y} L ${lastPoint.x},${lastPoint.y}`;
 	}

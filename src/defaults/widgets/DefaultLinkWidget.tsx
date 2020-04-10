@@ -211,7 +211,9 @@ export class DefaultLinkWidget extends BaseWidget<DefaultLinkProps, DefaultLinkS
 			// no label? nothing to do here
 			return;
 		}
-
+		if(!this.findPathAndRelativePositionToRenderLabel){
+			return;
+		}
 		const { path, position } = this.findPathAndRelativePositionToRenderLabel(index);
 
 		const labelDimensions = {

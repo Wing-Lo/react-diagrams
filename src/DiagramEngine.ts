@@ -262,7 +262,7 @@ export class DiagramEngine extends BaseEntity<DiagramEngineListener> {
 	}
 
 	getRelativeMousePoint(event): { x: number; y: number } {
-		var point = this.getRelativePoint(event.clientX, event.clientY);
+		var point = this.getRelativePoint(Toolkit.getClientX(event), Toolkit.getClientY(event));
 		return {
 			x: (point.x - this.diagramModel.getOffsetX()) / (this.diagramModel.getZoomLevel() / 100.0),
 			y: (point.y - this.diagramModel.getOffsetY()) / (this.diagramModel.getZoomLevel() / 100.0)
